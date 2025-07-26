@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react"
-import { TodoService, TodoRead } from "../client"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
-import { Label } from "./ui/label"
-import { Textarea } from "./ui/textarea"
-import { Checkbox } from "./ui/checkbox"
+import { TodoService } from "@/client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -13,17 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./ui/dialog"
+} from "@/components/ui/dialog"
 import { Plus, Edit } from "lucide-react"
-
-interface SaveTodoDialogProps {
-  onSave: () => void
-  todo?: TodoRead | null
-  trigger?: React.ReactNode
-  mode?: 'add' | 'edit'
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-}
+import { SaveTodoDialogProps } from "@/types/TodoModule"
 
 const SaveTodoDialog: React.FC<SaveTodoDialogProps> = ({ 
   onSave, 
@@ -99,23 +91,25 @@ const SaveTodoDialog: React.FC<SaveTodoDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button size="sm" variant={isEditMode ? "outline" : "default"}>
-            {isEditMode ? (
-              <>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit Task
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Task
-              </>
-            )}
-          </Button>
-        )}
-      </DialogTrigger>
+      {(trigger || mode === 'add') && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button size="sm" variant={isEditMode ? "outline" : "default"}>
+              {isEditMode ? (
+                <>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Task
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Task
+                </>
+              )}
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
