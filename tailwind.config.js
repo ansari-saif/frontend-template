@@ -16,6 +16,7 @@ module.exports = {
     },
     extend: {
       colors: {
+        // Design system tokens
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -48,6 +49,26 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // Brand-specific colors
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        // Brand palette (can be used directly when needed)
+        brand: {
+          blue: "#0066CC",      // Medical Blue
+          navy: "#1E3A8A",      // Trust Navy
+          green: "#10B981",     // Healing Green
+          teal: "#0891B2",      // Care Teal
+          lavender: "#8B5CF6",  // Soft Lavender
+          amber: "#F59E0B",     // Warning Amber
+          red: "#EF4444",       // Error Red
+          cyan: "#06B6D4",      // Info Cyan
         },
       },
       borderRadius: {

@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import TodoItem from '../components/TodoItem';
 import { TodoService, TodoRead } from '../client';
-import AddTodoForm from '@/components/AddTodoForm';
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import Sidebar from '@/components/Sidebar';
+import { TodoTable } from '@/components/TodoTable';
+import SaveTodoDialog from '@/components/SaveTodoDialog';
 
 const Todo: React.FC = () => {
   const [todos, setTodo] = useState<TodoRead[]>([]);
+  const [editingTodo, setEditingTodo] = useState<TodoRead | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const getTodo = ()=>{
     TodoService.listAllTodoApiV1TodoGet()
       .then(setTodo)
@@ -45,39 +48,66 @@ const Todo: React.FC = () => {
       .catch(console.error);
   };
 
+  const handleEdit = (todo: TodoRead) => {
+    setEditingTodo(todo);
+    setShowEditDialog(true);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-100 to-purple-100 p-8">
-      <Link to="/" className="ml-4 bg-transparent border border-black px-6 py-3 rounded-md text-black hover:bg-white hover:text-indigo-600">
-        Home
-      </Link>
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-md mx-auto bg-white rounded-lg shadow-lg overflow-hidden"
-      >
-        <div className="p-6">
-          <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">ToDo</h1>
-          <AddTodoForm onAdd={getTodo} />
-          <div className="mt-6 space-y-4">
-            {todos.map((todo) => (
-              <motion.div
-                key={todo.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <TodoItem
-                  todo={todo}
-                  onToggle={handleToggle}
-                  onDelete={handleDelete}
-                />
-              </motion.div>
-            ))}
+    <div className="min-h-screen bg-background">
+      <Sidebar />
+      <div className="ml-64 p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header */}
+          <div className="space-y-4">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/">
+                ← Back to Dashboard
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Task Management</h1>
+              <p className="text-muted-foreground mt-2">
+                Organize and track your daily tasks efficiently
+              </p>
+            </div>
+          </div>
+
+          
+          {/* Table */}
+          <div className="bg-card rounded-lg border border-border p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-card-foreground">All Tasks</h2>
+                <p className="text-sm text-muted-foreground">
+                  Manage your tasks with advanced filtering and sorting
+                </p>
+              </div>
+              <SaveTodoDialog onSave={getTodo} mode="add" />
+            </div>
+            <TodoTable 
+              todos={todos}
+              onToggle={handleToggle}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+              onAddNew={() => {}} // This will be handled by the dialog
+            />
+            
+            {/* Edit Dialog */}
+            <SaveTodoDialog 
+              onSave={() => {
+                getTodo();
+                setEditingTodo(null);
+                setShowEditDialog(false);
+              }} 
+              todo={editingTodo}
+              mode="edit"
+              open={showEditDialog}
+              onOpenChange={setShowEditDialog}
+            />
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

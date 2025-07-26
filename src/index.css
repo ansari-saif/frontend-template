@@ -4,68 +4,94 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
+    /* Background & Surface */
+    --background: 0 0% 100%;           /* Clean White */
+    --foreground: 222 47% 11%;         /* Text Dark */
+    --card: 0 0% 100%;                 /* Card background */
+    --card-foreground: 222 47% 11%;    /* Card text */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Primary Colors - Medical Blue Theme */
+    --primary: 214 100% 40%;           /* Medical Blue #0066CC */
+    --primary-foreground: 0 0% 100%;   /* White text on primary */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
+    /* Secondary Colors */
+    --secondary: 210 40% 96%;          /* Light background */
+    --secondary-foreground: 222 47% 11%; /* Dark text */
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    /* Interactive Elements */
+    --muted: 214 32% 91%;              /* Muted backgrounds */
+    --muted-foreground: 215 16% 47%;   /* Muted text */
+    --accent: 210 40% 96%;             /* Accent background */
+    --accent-foreground: 222 47% 11%;  /* Accent text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
+    /* Borders & Inputs */
+    --border: 214 32% 91%;             /* Border Light */
+    --input: 214 32% 91%;              /* Input borders */
+    --ring: 214 100% 40%;              /* Focus rings - Medical Blue */
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Popover */
+    --popover: 0 0% 100%;              /* Popover background */
+    --popover-foreground: 222 47% 11%; /* Popover text */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Error/Destructive - Medical Red */
+    --destructive: 0 84% 60%;          /* Error Red #EF4444 */
+    --destructive-foreground: 0 0% 100%; /* White text */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Success - Healing Green */
+    --success: 158 64% 52%;            /* Healing Green #10B981 */
+    --success-foreground: 0 0% 100%;   /* White text */
 
-    --destructive: 0 100% 50%;
-    --destructive-foreground: 210 40% 98%;
+    /* Warning - Medical Amber */
+    --warning: 45 93% 47%;             /* Warning Amber #F59E0B */
+    --warning-foreground: 0 0% 100%;   /* White text */
 
-    --ring: 215 20.2% 65.1%;
-
+    /* Border Radius */
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    /* Background & Surface - Dark Mode */
+    --background: 224 71% 4%;          /* Dark background */
+    --foreground: 213 31% 91%;         /* Light text */
+    --card: 224 71% 6%;                /* Slightly lighter card background */
+    --card-foreground: 213 31% 91%;    /* Light text on cards */
 
-    --muted: 223 47% 11%;
-    --muted-foreground: 215.4 16.3% 56.9%;
+    /* Primary Colors - Medical Blue (adjusted for dark) */
+    --primary: 214 100% 50%;           /* Slightly brighter blue for dark mode */
+    --primary-foreground: 224 71% 4%;  /* Dark text on primary */
 
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
+    /* Secondary Colors - Dark Mode */
+    --secondary: 223 47% 11%;          /* Dark secondary background */
+    --secondary-foreground: 213 31% 91%; /* Light text */
 
-    --popover: 224 71% 4%;
-    --popover-foreground: 215 20.2% 65.1%;
+    /* Interactive Elements - Dark Mode */
+    --muted: 223 47% 11%;              /* Dark muted background */
+    --muted-foreground: 215 16% 57%;   /* Muted text */
+    --accent: 216 34% 17%;             /* Dark accent background */
+    --accent-foreground: 210 40% 98%;  /* Light accent text */
 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
+    /* Borders & Inputs - Dark Mode */
+    --border: 216 34% 17%;             /* Dark borders */
+    --input: 216 34% 17%;              /* Dark input borders */
+    --ring: 214 100% 50%;              /* Brighter focus ring for visibility */
 
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
+    /* Popover - Dark Mode */
+    --popover: 224 71% 4%;             /* Dark popover background */
+    --popover-foreground: 215 20% 65%; /* Light popover text */
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 1.2%;
+    /* Error/Destructive - Dark Mode */
+    --destructive: 0 84% 60%;          /* Same error red, good contrast */
+    --destructive-foreground: 0 0% 100%; /* White text */
 
-    --secondary: 222.2 47.4% 11.2%;
-    --secondary-foreground: 210 40% 98%;
+    /* Success - Dark Mode */
+    --success: 158 64% 52%;            /* Same healing green */
+    --success-foreground: 0 0% 100%;   /* White text */
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    /* Warning - Dark Mode */
+    --warning: 45 93% 47%;             /* Same warning amber */
+    --warning-foreground: 0 0% 100%;   /* White text */
 
-    --ring: 216 34% 17%;
-
+    /* Border Radius */
     --radius: 0.5rem;
   }
 }
