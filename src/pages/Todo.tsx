@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { TodoService, TodoRead } from '@/client';
-
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -15,7 +14,6 @@ import {
   VisibilityState,
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal, Trash2, Edit, Plus } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -48,47 +46,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
-export const TODO_CONFIG = {
-  PAGE_SIZE: 10,
-  DEFAULT_SORT: 'title',
-  DEFAULT_SORT_DIRECTION: 'asc' as const,
-  FILTER_FIELDS: ['title', 'description', 'is_completed'] as const,
-  TABLE_COLUMNS: ['id', 'title', 'description', 'is_completed', 'actions'] as const,
-} as const;
-
-
-export interface TodoState {
-  todos: TodoRead[];
-  editingTodo: TodoRead | null;
-  showEditDialog: boolean;
-}
-
-export interface TodoActions {
-  getTodos: () => Promise<void>;
-  toggleTodo: (id: number) => Promise<void>;
-  deleteTodo: (id: number) => Promise<void>;
-  editTodo: (todo: TodoRead) => void;
-  setShowEditDialog: (show: boolean) => void;
-}
-
-export interface TodoTableProps {
-  todos: TodoRead[];
-  onToggle: (id: number) => void;
-  onDelete: (id: number) => void;
-  onEdit: (todo: TodoRead) => void;
-}
-
-export interface SaveTodoDialogProps {
-  onSave: () => void;
-  todo?: TodoRead | null;
-  mode?: 'add' | 'edit';
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  trigger?: React.ReactNode;
-} 
-
-// useTodo Hook
-export const useTodo = (): TodoState & TodoActions => {
+// Custom hook for todo management
+const useTodo = () => {
   const [todos, setTodos] = useState<TodoRead[]>([]);
   const [editingTodo, setEditingTodo] = useState<TodoRead | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -106,15 +65,10 @@ export const useTodo = (): TodoState & TodoActions => {
     const todo = todos.find((t) => t.id === id);
     if (!todo) return;
 
-    const updatedTodo = {
-      ...todo,
-      is_completed: !todo.is_completed,
-    };
-
     try {
       const updated = await TodoService.updateTodoApiV1TodoTodoIdPut({
         todoId: id,
-        requestBody: updatedTodo,
+        requestBody: { ...todo, is_completed: !todo.is_completed },
       });
       setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
     } catch (error) {
@@ -148,78 +102,69 @@ export const useTodo = (): TodoState & TodoActions => {
   };
 };
 
-// SaveTodoDialog Component
-const SaveTodoDialog: React.FC<SaveTodoDialogProps> = ({ 
-  onSave, 
-  todo = null, 
-  trigger, 
-  mode = 'add',
-  open: externalOpen,
-  onOpenChange: externalOnOpenChange
-}) => {
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [isCompleted, setIsCompleted] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [internalOpen, setInternalOpen] = useState(false)
+// Todo Dialog Component
+const TodoDialog: React.FC<{
+  onSave: () => void;
+  todo?: TodoRead | null;
+  mode?: 'add' | 'edit';
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
+}> = ({ onSave, todo = null, trigger, mode = 'add', open: externalOpen, onOpenChange: externalOnOpenChange }) => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
 
-  // Use external open state if provided, otherwise use internal state
-  const open = externalOpen !== undefined ? externalOpen : internalOpen
-  const setOpen = externalOnOpenChange || setInternalOpen
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
+  const isEditMode = mode === 'edit' && todo;
 
-  const isEditMode = mode === 'edit' && todo
-
-  // Reset form when dialog opens/closes or todo changes
   useEffect(() => {
     if (open && isEditMode) {
-      setTitle(todo.title || "")
-      setDescription(todo.description || "")
-      setIsCompleted(todo.is_completed || false)
+      setTitle(todo.title || "");
+      setDescription(todo.description || "");
+      setIsCompleted(todo.is_completed || false);
     } else if (open && !isEditMode) {
-      setTitle("")
-      setDescription("")
-      setIsCompleted(false)
+      setTitle("");
+      setDescription("");
+      setIsCompleted(false);
     }
-  }, [open, todo, isEditMode])
+  }, [open, todo, isEditMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!title.trim()) return
+    e.preventDefault();
+    if (!title.trim()) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
+      const todoData = {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        is_completed: isCompleted
+      };
+
       if (isEditMode) {
-        // Update existing todo
         await TodoService.updateTodoApiV1TodoTodoIdPut({
           todoId: todo.id!,
-          requestBody: { 
-            title: title.trim(),
-            description: description.trim() || undefined,
-            is_completed: isCompleted
-          } 
-        })
+          requestBody: todoData
+        });
       } else {
-        // Create new todo
-        await TodoService.createTodoApiV1TodoPost({ 
-          requestBody: { 
-            title: title.trim(),
-            description: description.trim() || undefined,
-            is_completed: isCompleted
-          } 
-        })
+        await TodoService.createTodoApiV1TodoPost({ requestBody: todoData });
       }
       
-      setTitle("")
-      setDescription("")
-      setIsCompleted(false)
-      setOpen(false)
-      onSave()
+      setTitle("");
+      setDescription("");
+      setIsCompleted(false);
+      setOpen(false);
+      onSave();
     } catch (error) {
-      console.error(`Failed to ${isEditMode ? 'update' : 'create'} todo:`, error)
+      console.error(`Failed to ${isEditMode ? 'update' : 'create'} todo:`, error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -244,14 +189,9 @@ const SaveTodoDialog: React.FC<SaveTodoDialogProps> = ({
       )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {isEditMode ? 'Edit Task' : 'Add New Task'}
-          </DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Task' : 'Add New Task'}</DialogTitle>
           <DialogDescription>
-            {isEditMode 
-              ? 'Update the task details below.' 
-              : 'Create a new task to add to your todo list.'
-            } Click save when you're done.
+            {isEditMode ? 'Update the task details below.' : 'Create a new task to add to your todo list.'} Click save when you're done.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -286,91 +226,60 @@ const SaveTodoDialog: React.FC<SaveTodoDialogProps> = ({
             </div>
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={isLoading}
-            >
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading || !title.trim()}>
-              {isLoading 
-                ? (isEditMode ? "Updating..." : "Creating...") 
-                : (isEditMode ? "Update Task" : "Create Task")
-              }
+              {isLoading ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update Task" : "Create Task")}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-// Table Columns Definition
+// Table Columns
 const columns: ColumnDef<TodoRead>[] = [
   {
     accessorKey: "id",
     header: () => <div>ID</div>,
-    cell: ({ row }) => {
-      const id = row.getValue("id") as number
-      return <div className="font-medium">#{id}</div>
-    },
+    cell: ({ row }) => <div className="font-medium">#{row.getValue("id")}</div>,
   },
   {
     accessorKey: "title",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Title
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const title = row.getValue("title") as string
-      return <div className="font-medium">{title}</div>
-    },
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Title
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
   },
   {
     accessorKey: "description",
     header: "Description",
     cell: ({ row }) => {
-      const description = row.getValue("description") as string
-      return (
-        <div className="text-muted-foreground max-w-[200px] truncate">
-          {description || "—"}
-        </div>
-      )
+      const description = row.getValue("description") as string;
+      return <div className="text-muted-foreground max-w-[200px] truncate">{description || "—"}</div>;
     },
   },
   {
     accessorKey: "is_completed",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Status
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const isCompleted = row.getValue("is_completed") as boolean
-      return <div>{isCompleted ? "Completed" : "Pending"}</div>
-    },
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Status
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div>{row.getValue("is_completed") ? "Completed" : "Pending"}</div>,
   },
   {
     id: "actions",
     enableHiding: false,
     cell: ({ row, table }) => {
-      const todo = row.original
-      const meta = table.options.meta as { onToggle: (id: number) => void; onDelete: (id: number) => void; onEdit: (todo: TodoRead) => void }
+      const todo = row.original;
+      const meta = table.options.meta as { onDelete: (id: number) => void; onEdit: (todo: TodoRead) => void };
 
       return (
         <DropdownMenu>
@@ -387,26 +296,22 @@ const columns: ColumnDef<TodoRead>[] = [
               Edit Task
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => meta?.onDelete(todo.id!)}
-              className="text-destructive focus:text-destructive"
-            >
+            <DropdownMenuItem onClick={() => meta?.onDelete(todo.id!)} className="text-destructive focus:text-destructive">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete Task
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
-]
+];
 
-// TodoTable Component
-function TodoTable({ todos, onToggle, onDelete, onEdit }: TodoTableProps) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
+// Todo Table Component
+const TodoTable: React.FC<{ todos: TodoRead[]; onDelete: (id: number) => void; onEdit: (todo: TodoRead) => void }> = ({ todos, onDelete, onEdit }) => {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
   const table = useReactTable({
     data: todos,
@@ -418,34 +323,19 @@ function TodoTable({ todos, onToggle, onDelete, onEdit }: TodoTableProps) {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
-    meta: {
-      onToggle,
-      onDelete,
-      onEdit,
-    },
-  })
+    state: { sorting, columnFilters, columnVisibility },
+    meta: { onDelete, onEdit },
+  });
 
   return (
     <div className="w-full space-y-4">
-      {/* Header Actions */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Input
-            placeholder="Filter tasks..."
-            value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("title")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-          />
-        </div>
+        <Input
+          placeholder="Filter tasks..."
+          value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
+          onChange={(event) => table.getColumn("title")?.setFilterValue(event.target.value)}
+          className="max-w-sm"
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
@@ -453,72 +343,47 @@ function TodoTable({ todos, onToggle, onDelete, onEdit }: TodoTableProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
+            {table.getAllColumns().filter((column) => column.getCanHide()).map((column) => (
+              <DropdownMenuCheckboxItem
+                key={column.id}
+                className="capitalize"
+                checked={column.getIsVisible()}
+                onCheckedChange={(value) => column.toggleVisibility(!!value)}
+              >
+                {column.id}
+              </DropdownMenuCheckboxItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Table */}
       <div className="rounded-md border bg-background">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  )
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-muted/50"
-                >
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className="hover:bg-muted/50">
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   <div className="flex flex-col items-center space-y-2">
                     <p className="text-muted-foreground">No tasks found. Add one to get started!</p>
                   </div>
@@ -529,41 +394,21 @@ function TodoTable({ todos, onToggle, onDelete, onEdit }: TodoTableProps) {
         </Table>
       </div>
 
-      {/* Pagination */}
       <div className="flex items-center justify-end space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
+        <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
           Previous
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
+        <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
           Next
         </Button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-// TodoView Component
-const TodoView: React.FC = () => {
-  const {
-    todos,
-    editingTodo,
-    showEditDialog,
-    getTodos,
-    toggleTodo,
-    deleteTodo,
-    editTodo,
-    setShowEditDialog,
-  } = useTodo();
+// Main Todo Page Component
+const TodoPage: React.FC = () => {
+  const { todos, editingTodo, showEditDialog, getTodos, deleteTodo, editTodo, setShowEditDialog } = useTodo();
 
   useEffect(() => {
     getTodos();
@@ -574,36 +419,24 @@ const TodoView: React.FC = () => {
       <Sidebar />
       <div className="ml-64 p-8">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header */}
           <div className="space-y-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Task Management</h1>
-              <p className="text-muted-foreground mt-2">
-                Organize and track your daily tasks efficiently
-              </p>
+              <p className="text-muted-foreground mt-2">Organize and track your daily tasks efficiently</p>
             </div>
           </div>
 
-          {/* Table */}
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-semibold text-card-foreground">All Tasks</h2>
-                <p className="text-sm text-muted-foreground">
-                  Manage your tasks with advanced filtering and sorting
-                </p>
+                <p className="text-sm text-muted-foreground">Manage your tasks with advanced filtering and sorting</p>
               </div>
-              <SaveTodoDialog onSave={getTodos} mode="add" />
+              <TodoDialog onSave={getTodos} mode="add" />
             </div>
-            <TodoTable
-              todos={todos}
-              onToggle={toggleTodo}
-              onDelete={deleteTodo}
-              onEdit={editTodo}
-            />
+            <TodoTable todos={todos} onDelete={deleteTodo} onEdit={editTodo} />
 
-            {/* Edit Dialog */}
-            <SaveTodoDialog
+            <TodoDialog
               onSave={() => {
                 getTodos();
                 setShowEditDialog(false);
@@ -618,11 +451,6 @@ const TodoView: React.FC = () => {
       </div>
     </div>
   );
-};
-
-// Main TodoPage Component
-const TodoPage: React.FC = () => {
-  return <TodoView />;
 };
 
 export default TodoPage;
