@@ -1,49 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { TodoService, TodoRead } from '@/client';
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  SortingState,
-  useReactTable,
-  VisibilityState,
-} from "@tanstack/react-table"
+import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal, Trash2, Edit, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const TodoPage: React.FC = () => {
   const [todos, setTodos] = useState<TodoRead[]>([]);
@@ -51,65 +18,32 @@ const TodoPage: React.FC = () => {
   const [editingTodo, setEditingTodo] = useState<TodoRead | null>(null);
   const [formData, setFormData] = useState({ title: "", description: "", isCompleted: false });
   const [isLoading, setIsLoading] = useState(false);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-  const getTodos = async () => {
-    try {
-      setTodos(await TodoService.listAllTodoApiV1TodoGet());
-    } catch (error) {
-      console.error('Failed to fetch todos:', error);
-    }
-  };
-
-  const deleteTodo = async (id: number) => {
-    try {
-      await TodoService.deleteTodoApiV1TodoTodoIdDelete({ todoId: id });
-      setTodos(prev => prev.filter(t => t.id !== id));
-    } catch (error) {
-      console.error('Failed to delete todo:', error);
-    }
+  const fetchTodos = async () => setTodos(await TodoService.listAllTodoApiV1TodoGet());
+  const handleDelete = async (id: number) => {
+    await TodoService.deleteTodoApiV1TodoTodoIdDelete({ todoId: id });
+    setTodos(prev => prev.filter(t => t.id !== id));
   };
 
   const openDialog = (todo?: TodoRead) => {
-    if (todo) {
-      setEditingTodo(todo);
-      setFormData({
-        title: todo.title || "",
-        description: todo.description || "",
-        isCompleted: todo.is_completed || false
-      });
-    } else {
-      setEditingTodo(null);
-      setFormData({ title: "", description: "", isCompleted: false });
-    }
+    setEditingTodo(todo || null);
+    setFormData(todo ? { title: todo.title || "", description: todo.description || "", isCompleted: todo.is_completed || false } : { title: "", description: "", isCompleted: false });
     setShowDialog(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
-
     setIsLoading(true);
     try {
-      const todoData = {
-        title: formData.title.trim(),
-        description: formData.description.trim() || undefined,
-        is_completed: formData.isCompleted
-      };
-
+      const todoData = { title: formData.title.trim(), description: formData.description.trim() || undefined, is_completed: formData.isCompleted };
       if (editingTodo) {
-        await TodoService.updateTodoApiV1TodoTodoIdPut({
-          todoId: editingTodo.id!,
-          requestBody: todoData
-        });
+        await TodoService.updateTodoApiV1TodoTodoIdPut({ todoId: editingTodo.id!, requestBody: todoData });
       } else {
         await TodoService.createTodoApiV1TodoPost({ requestBody: todoData });
       }
-      
       setShowDialog(false);
-      getTodos();
+      fetchTodos();
     } catch (error) {
       console.error(`Failed to ${editingTodo ? 'update' : 'create'} todo:`, error);
     } finally {
@@ -118,81 +52,28 @@ const TodoPage: React.FC = () => {
   };
 
   const columns: ColumnDef<TodoRead>[] = [
+    { accessorKey: "id", header: "ID", cell: ({ row }) => <div className="font-medium">#{row.getValue("id")}</div> },
+    { accessorKey: "title", header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Title <ArrowUpDown className="ml-2 h-4 w-4" /></Button>, cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div> },
+    { accessorKey: "description", header: "Description", cell: ({ row }) => <div className="text-muted-foreground max-w-[200px] truncate">{row.getValue("description") || "—"}</div> },
+    { accessorKey: "is_completed", header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Status <ArrowUpDown className="ml-2 h-4 w-4" /></Button>, cell: ({ row }) => <div>{row.getValue("is_completed") ? "Completed" : "Pending"}</div> },
     {
-      accessorKey: "id",
-      header: "ID",
-      cell: ({ row }) => <div className="font-medium">#{row.getValue("id")}</div>,
-    },
-    {
-      accessorKey: "title",
-      header: ({ column }) => (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Title <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
-    },
-    {
-      accessorKey: "description",
-      header: "Description",
-      cell: ({ row }) => {
-        const desc = row.getValue("description") as string;
-        return <div className="text-muted-foreground max-w-[200px] truncate">{desc || "—"}</div>;
-      },
-    },
-    {
-      accessorKey: "is_completed",
-      header: ({ column }) => (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Status <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => <div>{row.getValue("is_completed") ? "Completed" : "Pending"}</div>,
-    },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => (
+      id: "actions", enableHiding: false, cell: ({ row }) => (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => openDialog(row.original)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Task
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openDialog(row.original)}><Edit className="mr-2 h-4 w-4" />Edit Task</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => deleteTodo(row.original.id!)} className="text-destructive focus:text-destructive">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Task
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDelete(row.original.id!)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Delete Task</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
     },
   ];
 
-  const table = useReactTable({
-    data: todos,
-    columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    state: { sorting, columnFilters, columnVisibility },
-  });
+  const table = useReactTable({ data: todos, columns, getCoreRowModel: getCoreRowModel(), getPaginationRowModel: getPaginationRowModel(), getSortedRowModel: getSortedRowModel(), getFilteredRowModel: getFilteredRowModel() });
 
-  useEffect(() => {
-    getTodos();
-  }, []);
+  useEffect(() => { fetchTodos(); }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -210,35 +91,16 @@ const TodoPage: React.FC = () => {
                 <h2 className="text-xl font-semibold text-card-foreground">All Tasks</h2>
                 <p className="text-sm text-muted-foreground">Manage your tasks with advanced filtering and sorting</p>
               </div>
-              <Button size="sm" onClick={() => openDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Task
-              </Button>
+              <Button size="sm" onClick={() => openDialog()}><Plus className="mr-2 h-4 w-4" />Add Task</Button>
             </div>
 
             <div className="flex items-center justify-between mb-4">
-              <Input
-                placeholder="Filter tasks..."
-                value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
-                onChange={(event) => table.getColumn("title")?.setFilterValue(event.target.value)}
-                className="max-w-sm"
-              />
+              <Input placeholder="Filter tasks..." value={(table.getColumn("title")?.getFilterValue() as string) ?? ""} onChange={(event) => table.getColumn("title")?.setFilterValue(event.target.value)} className="max-w-sm" />
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Columns <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild><Button variant="outline" size="sm">Columns <ChevronDown className="ml-2 h-4 w-4" /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {table.getAllColumns().filter((column) => column.getCanHide()).map((column) => (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem key={column.id} className="capitalize" checked={column.getIsVisible()} onCheckedChange={(value) => column.toggleVisibility(!!value)}>{column.id}</DropdownMenuCheckboxItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -250,9 +112,7 @@ const TodoPage: React.FC = () => {
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                        </TableHead>
+                        <TableHead key={header.id}>{header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}</TableHead>
                       ))}
                     </TableRow>
                   ))}
@@ -262,9 +122,7 @@ const TodoPage: React.FC = () => {
                     table.getRowModel().rows.map((row) => (
                       <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className="hover:bg-muted/50">
                         {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
+                          <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                         ))}
                       </TableRow>
                     ))
@@ -280,12 +138,8 @@ const TodoPage: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-end space-x-2 mt-4">
-              <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                Previous
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-                Next
-              </Button>
+              <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
+              <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
             </div>
           </div>
         </div>
@@ -295,45 +149,25 @@ const TodoPage: React.FC = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>{editingTodo ? 'Edit Task' : 'Add New Task'}</DialogTitle>
-            <DialogDescription>
-              {editingTodo ? 'Update the task details below.' : 'Create a new task to add to your todo list.'} Click save when you're done.
-            </DialogDescription>
+            <DialogDescription>{editingTodo ? 'Update the task details below.' : 'Create a new task to add to your todo list.'} Click save when you're done.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="title">Title *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Enter task title..."
-                  required
-                />
+                <Input id="title" value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} placeholder="Enter task title..." required />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Add a description (optional)..."
-                  rows={3}
-                />
+                <Textarea id="description" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} placeholder="Add a description (optional)..." rows={3} />
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="completed"
-                  checked={formData.isCompleted}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isCompleted: checked as boolean }))}
-                />
+                <Checkbox id="completed" checked={formData.isCompleted} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isCompleted: checked as boolean }))} />
                 <Label htmlFor="completed">Mark as completed</Label>
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowDialog(false)} disabled={isLoading}>
-                Cancel
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setShowDialog(false)} disabled={isLoading}>Cancel</Button>
               <Button type="submit" disabled={isLoading || !formData.title.trim()}>
                 {isLoading ? (editingTodo ? "Updating..." : "Creating...") : (editingTodo ? "Update Task" : "Create Task")}
               </Button>
