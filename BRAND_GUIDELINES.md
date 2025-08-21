@@ -1,4 +1,4 @@
-# Brand Guidelines - Hospital Management System
+# Brand Guidelines - Your Company Name
 
 ## Brand Identity
 

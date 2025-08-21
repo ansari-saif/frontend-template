@@ -14,8 +14,8 @@ const Sidebar = () => {
             <BarChart3 className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="font-bold text-lg">HMS</h1>
-            <p className="text-white/80 text-xs">Hospital Management</p>
+            <h1 className="font-bold text-lg">YCN</h1>
+            <p className="text-white/80 text-xs">Your Company</p>
           </div>
         </div>
       </div>

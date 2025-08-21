@@ -6,7 +6,7 @@ const Dashboard = () => {
         {/* Main Title with enhanced styling */}
         <div className="relative">
           <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-primary/80 to-success bg-clip-text text-transparent mb-6 leading-tight">
-            Hospital Management System
+            Your Company Name
           </h1>
           
           {/* Subtle underline accent */}
@@ -15,7 +15,7 @@ const Dashboard = () => {
         
         {/* Enhanced subtitle */}
         <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-          Solving healthcare problems using technology with a focus on clarity, trust, and efficiency
+          Your company's tagline
         </p>
       </div>
     </div>
